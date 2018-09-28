@@ -3,15 +3,13 @@ package com.lho.cache.jetcache.services;
 import com.alicp.jetcache.Cache;
 import com.alicp.jetcache.CacheGetResult;
 import com.alicp.jetcache.CacheResultCode;
-import com.alicp.jetcache.anno.CacheType;
-import com.alicp.jetcache.anno.CacheUpdate;
-import com.alicp.jetcache.anno.Cached;
-import com.alicp.jetcache.anno.CreateCache;
+import com.alicp.jetcache.anno.*;
 import com.lho.cache.jetcache.models.User;
 import com.lho.cache.jetcache.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -40,17 +38,13 @@ public class UserService {
         Iterator<User> userIterator = users.iterator();
         while (userIterator.hasNext()) {
             User user = userIterator.next();
-            userCache.put(user.getId(), user);
+//            userCache.put(user.getId(), user);
             userList.add(user);
         }
         return userList;
     }
 
-    @CacheUpdate(name="UserService.users", key="#user.id", value="#user")
-    public void updateUser(User user) {
-        userRepository.save(user);
-    }
-
+    // 获取用户
     @Cached(name="UserService.users", expire = 100, key="#userId")
     public User getUserById(Integer userId) {
 //        CacheGetResult<User> userCacheResilt = userCache.GET(userId);
@@ -60,6 +54,32 @@ public class UserService {
 //        }
 //        return userCache.get(userId);
         return userRepository.findOne(userId);
+    }
+
+    // 更新用户
+    @CacheUpdate(name="UserService.users", key="#user.id", value="#user")
+    public void updateUser(User user) {
+        User user1 = userRepository.findOne(user.getId());
+        if (null == user1) {
+            throw new EntityNotFoundException("E_NOT_FOUND_USER");
+        }
+        userRepository.save(user);
+    }
+
+    // 删除用户
+    @CacheInvalidate(name="UserService.users", key="#id")
+    public void removeUserById(Integer id) {
+        User user = userRepository.findOne(id);
+        if (null == user) {
+            throw new EntityNotFoundException("E_NOT_FOUND_USER");
+        }
+        userRepository.delete(id);
+    }
+
+    // 新增用户
+    public User addUser(User user) {
+        userRepository.save(user);
+        return user;
     }
 
     private <T> T validCacheGet(CacheGetResult<T> result) {

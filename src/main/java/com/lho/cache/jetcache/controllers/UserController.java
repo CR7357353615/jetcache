@@ -30,4 +30,14 @@ public class UserController {
     public void updateUser(@RequestBody User user) {
         userService.updateUser(user);
     }
+
+    @DeleteMapping("/user")
+    public void deleteUser(@RequestParam Integer userId) {
+        userService.removeUserById(userId);
+    }
+
+    @PostMapping("/user")
+    public void addUser(@RequestBody User user) {
+        userService.addUser(user);
+    }
 }
